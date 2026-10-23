@@ -1,118 +1,154 @@
-# 🔎 Inverted Search in C
-
-A C-based inverted search application that indexes words from multiple text files and maps each word to the files in which it appears, along with its frequency.
-
----
+# 🔎 Inverted Search Project in C
 
 ## 📌 Project Overview
 
-Inverted Search is a C programming project designed to improve word retrieval across multiple text files. It creates an indexed database that stores unique words, associated filenames, and word occurrence counts.
-
-The application supports database creation, display, searching, saving, and updating. It uses a hash table and linked lists to organize indexed information and retrieve matching file details efficiently.
-
----
+Inverted Search is a command-line application written in **C** that builds an **inverted index** from multiple text files. It stores each unique word, the files containing that word, and the number of times it appears in each file. The database can be displayed, searched, updated with new files, and saved for future use.
 
 ## ✨ Features
 
-- **Create Database:** Extracts words from multiple text files and creates an indexed database.
-- **Display Database:** Displays indexed words, associated filenames, and word frequencies.
-- **Search Word:** Searches for a specific word and displays the files containing it, along with occurrence counts.
-- **Save Database:** Stores the indexed database in a file for future retrieval.
-- **Update Database:** Reconstructs the database from a previously saved database file.
-- **File Validation:** Validates input files and prevents duplicate files from being processed.
+- 📂 **Input File Validation:** Checks file extensions, existence, non-empty content, and duplicate files.
+- 🏗️ **Create Database:** Builds an inverted index from valid text files.
+- 📊 **Display Database:** Displays indexed words, filenames, file counts, and word frequencies in a table.
+- 🔍 **Search Database:** Finds a word and displays the files containing it and its occurrence count.
+- 🔄 **Update Database:** Adds a new file to the existing index without rebuilding previously indexed files.
+- 💾 **Save Database:** Stores the index in a text file for future use.
+- 🖥️ **Menu-Driven Interface:** Provides six menu options with a continue prompt after operations.
 
----
+## ⚙️ How It Works
 
-## 🛠️ Technologies Used
+The program uses a **hash table with 27 slots**. Each word is assigned an index based on its first character.
 
-- **Programming Language:** C
-- **Data Structures:** Hash Tables and Singly Linked Lists
-- **Core Concepts:** Pointers, Dynamic Memory Allocation, String Manipulation, and File Handling
-- **Operating System:** Linux
-- **Build Tool:** Makefile
+| 🔤 First Character | 📍 Hash Index |
+|---|---:|
+| `a`–`z` or `A`–`Z` | 0–25 |
+| Digits and other characters | 26 |
 
----
+Alphabetic characters are converted to lowercase before calculating the index:
 
-## 📂 Project Structure
+```c
+tolower(ch) - 'a'
+```
+
+Each hash-table slot points to a linked list of unique words (**main list**). Every word node maintains another linked list (**sub list**) containing the filenames in which the word appears and its occurrence count in each file.
+
+### 🗂️ Data Structure Visualization
+
+```text
+Hash Table (27 slots)
+
+[0] --> "apple" (2 files) --> "arrow" (1 file) --> NULL
+           |                     |
+           v                     v
+        file2.txt (3)          file1.txt (1)
+           |
+           v
+        file1.txt (1)
+
+[1] --> "bat" ...
+...
+[26] --> "123" ...
+```
+
+## 🧱 Data Structures
+
+- 📄 **Flist:** Maintains the list of valid input files.
+- 🗃️ **Hash_t:** Represents a hash-table slot and points to its main linked list.
+- 📝 **Mlist:** Stores each unique word, the number of files containing it, and a pointer to its sub list.
+- 🔗 **Slist:** Stores a filename, the word's occurrence count in that file, and a pointer to the next file node.
+
+## 📁 Project Structure
 
 ```text
 inverted-search/
-├── main.c
 ├── header.h
+├── main.c
+├── read_and_validation.c
 ├── create_db.c
 ├── display_db.c
 ├── search_db.c
-├── save_db.c
 ├── update_db.c
-├── validation.c
-├── makefile
-├── filelist
+├── save_database.c
 └── README.md
 ```
 
+## 🖥️ Menu Options
 
-## 🚀 Execution
+| Option | Operation | Description |
+|---:|---|---|
+| 1️⃣ | Create Database | Reads valid input files and builds the index. |
+| 2️⃣ | Display Database | Displays all indexed words and their file details. |
+| 3️⃣ | Search Database | Searches for a word and displays its file details. |
+| 4️⃣ | Update Database | Validates and indexes a new file. |
+| 5️⃣ | Save Database | Saves the index to a `.txt` file. |
+| 6️⃣ | Exit | Terminates the program. |
 
-Run the executable with the input text files:
+After options 1–5, the program asks `Do you want to continue?`. Enter `y` or `Y` to continue, or `n` or `N` to quit.
 
-```bash
-./a.out f1.txt f2.txt f3.txt
+## 📊 Sample Output
+
+### 📋 Display Database
+
+```text
++-------+----------------------+-------+---------------------------+------------+
+| Index | Word                 | Files | File Name                 | Word Count |
++-------+----------------------+-------+---------------------------+------------+
+| 0     | apple                | 2     | file2.txt                 | 3          |
+| 0     | apple                | 2     | file1.txt                 | 1          |
+| 1     | bat                  | 1     | file1.txt                 | 2          |
++-------+----------------------+-------+---------------------------+------------+
 ```
 
-Replace the filenames with the actual text files you want to index. Use the executable name generated by your Makefile if it differs from `a.out`.
+### 💾 Saved Database Format
 
-The application displays a menu through which users can perform database operations.
+```text
+#0;apple;2;file2.txt;3;file1.txt;1;#
+#1;bat;1;file1.txt;2;#
+```
 
----
+Each line follows this format:
 
-## 🔍 Working Principle
+```text
+#index;word;fileCount;filename;wordcount;filename;wordcount;...;#
+```
 
-### 1. Database Creation
-- Read and validate the input text files.
-- Extract words from each file.
-- Store unique words and their associated filenames in the index.
-- Maintain word occurrence counts.
+## ✅ Input File Validation
 
-### 2. Database Display
-- Traverse the indexed data structure.
-- Display words, filenames, and their corresponding frequencies.
+A file is accepted only if it meets all four conditions:
 
-### 3. Word Search
-- Accept a search word from the user.
-- Locate the word in the index.
-- Display matching filenames and occurrence counts.
+1. 📌 It has the `.txt` extension.
+2. 📂 It exists and can be opened.
+3. 📄 It is not empty.
+4. 🔁 It has not already been added.
 
-### 4. Database Save
-- Write the indexed information to a database file for future use.
+Invalid files are reported and skipped, while the remaining valid files continue to be processed.
 
-### 5. Database Update
-- Load the previously saved database.
-- Reconstruct the index from the stored information.
+## 🛠️ Technologies Used
 
----
+- 💻 C Programming
+- 🗃️ Hash Tables
+- 🔗 Singly Linked Lists
+- 👉 Pointers and Dynamic Memory Allocation
+- 🔤 String Manipulation
+- 📂 File Handling
+- 🖥️ Command-Line Interface
+- ⚙️ Makefile (if used in the project)
 
-## 📚 Concepts Learned
+## 🚀 Compilation and Execution
 
-- Hash table implementation for word indexing.
-- Singly linked list operations for managing words and filenames.
-- Dynamic memory allocation and pointer management.
-- File handling for database creation, storage, and retrieval.
-- Input validation and duplicate-file handling.
-- Modular programming using multiple C source files.
-- Efficient searching using indexed data structures.
+Compile the source files using your project's Makefile:
 
----
+```bash
+make
+```
 
-## 🎯 Learning Outcomes
+Run the program with the input text files:
 
-Through this project, I gained practical experience in implementing indexing algorithms, managing dynamic data structures, processing multiple text files, and performing file-based database operations using C.
+```bash
+./a.out file1.txt file2.txt file3.txt
+```
 
----
+> **Note:** These commands assume your Makefile generates `a.out`. If it generates a differently named executable, use that executable's name instead.
 
 ## 👩‍💻 Author
 
-**Shruti Tushar Khamitkar**
-
-## 📄 License
-
-This project is intended for educational purposes. Add an appropriate open-source license if you plan to distribute the code under specific licensing terms.
+**Shruti Khamitkar**
